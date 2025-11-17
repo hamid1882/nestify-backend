@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from databases import Database
 from typing import Optional, List
@@ -13,6 +14,11 @@ Base = declarative_base()
 # Environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
+# Fix Render's postgres:// to postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # SQLite specific settings
 if DATABASE_URL.startswith("sqlite"):
@@ -23,6 +29,15 @@ else:
 database = Database(DATABASE_URL)
 
 app = FastAPI()
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,  # Configure via ALLOWED_ORIGINS env var
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 class TreeNode(Base):
