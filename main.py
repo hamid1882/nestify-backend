@@ -89,14 +89,28 @@ async def shutdown():
 
 async def insert_tree_recursive(item: TreeItemCreate, parent_id: Optional[int] = None) -> int:
     """Recursively insert tree nodes and return the root node id"""
-    query = """
-    INSERT INTO tree_items (name, data, parent_id)
-    VALUES (:name, :data, :parent_id)
-    """
-    node_id = await database.execute(
-        query,
-        values={"name": item.name, "data": item.data, "parent_id": parent_id}
-    )
+    # Use RETURNING clause for PostgreSQL compatibility
+    if DATABASE_URL.startswith("postgresql"):
+        query = """
+        INSERT INTO tree_items (name, data, parent_id)
+        VALUES (:name, :data, :parent_id)
+        RETURNING id
+        """
+        result = await database.fetch_one(
+            query,
+            values={"name": item.name, "data": item.data, "parent_id": parent_id}
+        )
+        node_id = result['id']
+    else:
+        # SQLite fallback
+        query = """
+        INSERT INTO tree_items (name, data, parent_id)
+        VALUES (:name, :data, :parent_id)
+        """
+        node_id = await database.execute(
+            query,
+            values={"name": item.name, "data": item.data, "parent_id": parent_id}
+        )
 
     if item.children:
         for child in item.children:
