@@ -10,8 +10,16 @@ import os
 
 Base = declarative_base()
 
-DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Environment variables
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# SQLite specific settings
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 database = Database(DATABASE_URL)
 
 app = FastAPI()
@@ -26,9 +34,9 @@ class TreeNode(Base):
     parent_id = Column(Integer, ForeignKey('tree_items.id'), nullable=True)
 
 
-# Drop and recreate tables on startup (ONLY for development)
-# Comment out the next line for production and use proper migrations
-Base.metadata.drop_all(bind=engine)
+# Drop and recreate tables (ONLY for development)
+if ENVIRONMENT == "development":
+    Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 
