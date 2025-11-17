@@ -1,7 +1,16 @@
 fastapi
 uvicorn[standard]
-databases[aiosqlite]
+gunicorn
+databases[postgresql]
 sqlalchemy
 pydantic
-aiosqlite
-gunicorn
+asyncpg
+psycopg2-binary
+
+### **Step 2: Update Environment Variable**
+
+Add this to your Render environment variables:
+```
+ENVIRONMENT=production
+DATABASE_URL=<automatically filled when you select the database>
+```
